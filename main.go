@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 
 	"github.com/itchyny/gojq"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -52,13 +54,57 @@ func run(cmd *cobra.Command, args []string) {
 	}
 	fmt.Printf("Arguments: %+v\n", cmd)
 
+	// Check if stdin is in non-blocking mode
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		fmt.Println("Error getting stdin status:", err)
+		os.Exit(1)
+	}
+
+	if (stat.Mode() & os.ModeCharDevice) != 0 {
+		// TODO: if no data piped to program, a file has to be specified
+		fmt.Println("No data on stdin, check that data is correctly piped as input")
+		os.Exit(0)
+	}
+
 	fmt.Printf("configFile: %s, outputDir: %s, groupbyPath: %s\n", configFile, outputDir, groupbyPath)
+
+	// TODO: construct the groupby query
+	//let jq_groupby = format!("[ .[] |  select({groupby})] | [group_by({groupby})[] | {{ (.[0] | {groupby}): . }}] | add", groupby=groupby_path);
+	// TODO: get items where the groupby path is not present
+	// let jq_ungrouped = format!("[.[] |  select({groupby} | not)]", groupby=groupby_path);
+
 	query, err := gojq.Parse(groupbyPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	input := map[string]any{"foo": []any{1, 2, 3}}
-	iter := query.Run(input) // or query.RunWithContext
+
+	/*data, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		panic(err)
+	}
+	textContent := string(data)*/
+
+	//TODO: load YAML from file
+
+	fmt.Printf("reading data from stdin...")
+	decoder := yaml.NewDecoder(os.Stdin)
+
+	objects := make([]interface{}, 0)
+	for {
+		var obj map[string]interface{}
+		err := decoder.Decode(&obj)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			fmt.Println("Error decoding YAML:", err)
+			os.Exit(1)
+		}
+		fmt.Println("Decoded object:", obj)
+		objects = append(objects, obj)
+	}
+
+	iter := query.Run(objects) // or query.RunWithContext
 	for {
 		v, ok := iter.Next()
 		if !ok {
