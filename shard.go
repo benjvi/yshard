@@ -7,6 +7,12 @@ import (
 	"path/filepath"
 )
 
+// TODO: use shard type where its being passed around
+type shard struct {
+	name     string
+	yamlDocs []interface{}
+}
+
 func groupYamlDocsByPathValues(groupbyPath string, inputData []interface{}) (map[string]interface{}, []interface{}) {
 	groupbyQuery := fmt.Sprintf("[ .[] |  select(%[1]s)] | [group_by(%[1]s)[] | { (.[0] | %[1]s): . }] | add", groupbyPath)
 	fmt.Printf("Grouping YAML docs using the query: %q\n", groupbyQuery)
@@ -19,8 +25,8 @@ func groupYamlDocsByPathValues(groupbyPath string, inputData []interface{}) (map
 	ungroupedData := runGojqQuery(ungroupedQuery, inputData)
 	// fmt.Printf("Ungrouped data: %#v\n", ungroupedData)
 
-	ungroupedDataOut := ungroupedData.([]interface{})
-	groupedDataOut := groupedData.(map[string]interface{})
+	ungroupedDataOut := ungroupedData.([]interface{})      // an array of YAML docs
+	groupedDataOut := groupedData.(map[string]interface{}) // maps shard name to an array of YAML docs
 
 	return groupedDataOut, ungroupedDataOut
 }
