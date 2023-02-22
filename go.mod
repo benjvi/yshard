@@ -1,4 +1,4 @@
-module bjv.me/hello
+module github.com/benjvi/yshard
 
 go 1.19
 

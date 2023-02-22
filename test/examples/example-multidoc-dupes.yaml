@@ -1,0 +1,13 @@
+---
+foo: bar1
+name: doc1
+---
+foo: bar1
+name: doc2
+---
+foo: bar2
+name: doc3
+---
+name: doc4
+---
+name: doc5

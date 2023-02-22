@@ -1,0 +1,12 @@
+---
+# comment in first doc
+foo: bar1
+name: doc1
+---
+foo: bar1
+# comment in the middle
+name: doc2
+---
+foo: bar2
+name: doc3
+# comment at end
