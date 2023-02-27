@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func readYamlFromStdin() []interface{} {
+func readYamlFromStdin(logger Logger) []interface{} {
 	decoder := yaml.NewDecoder(os.Stdin)
 
 	inputData := make([]interface{}, 0)
@@ -19,8 +19,7 @@ func readYamlFromStdin() []interface{} {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			fmt.Println("Error decoding YAML:", err)
-			os.Exit(1)
+			logger.Fatal(fmt.Sprintf("Error decoding YAML: %s", err))
 		}
 		//fmt.Println("Decoded object:", obj)
 		inputData = append(inputData, obj)
@@ -28,7 +27,7 @@ func readYamlFromStdin() []interface{} {
 	return inputData
 }
 
-func multiDocYAMLToString(docs []interface{}) (string, error) {
+func multiDocYAMLToString(logger Logger, docs []interface{}) (string, error) {
 	var buf bytes.Buffer
 	enc := yaml.NewEncoder(&buf)
 

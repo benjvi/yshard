@@ -13,16 +13,16 @@ type shard struct {
 	yamlDocs []interface{}
 }
 
-func groupYamlDocsByPathValues(groupbyPath string, inputData []interface{}) (map[string]interface{}, []interface{}) {
+func groupYamlDocsByPathValues(logger Logger, groupbyPath string, inputData []interface{}) (map[string]interface{}, []interface{}) {
 	groupbyQuery := fmt.Sprintf("[ .[] |  select(%[1]s)] | [group_by(%[1]s)[] | { (.[0] | %[1]s): . }] | add", groupbyPath)
-	fmt.Printf("Grouping YAML docs using the query: %q\n", groupbyQuery)
-	groupedData := runGojqQuery(groupbyQuery, inputData)
+	logger.Info(fmt.Sprintf("Grouping YAML docs using the query: %q\n", groupbyQuery))
+	groupedData := runGojqQuery(logger, groupbyQuery, inputData)
 	//fmt.Printf("Grouped data: %#v\n", groupedData)
 
 	// groupby query doesn't include documents where the groupby path is missing or has no value
 	ungroupedQuery := fmt.Sprintf("[.[] |  select(%[1]s | not)]", groupbyPath)
-	fmt.Printf("Retrieving ungrouped YAML docs using the query: %q\n", ungroupedQuery)
-	ungroupedData := runGojqQuery(ungroupedQuery, inputData)
+	logger.Info(fmt.Sprintf("Retrieving ungrouped YAML docs using the query: %q\n", ungroupedQuery))
+	ungroupedData := runGojqQuery(logger, ungroupedQuery, inputData)
 	// fmt.Printf("Ungrouped data: %#v\n", ungroupedData)
 
 	ungroupedDataOut := ungroupedData.([]interface{})      // an array of YAML docs
@@ -34,27 +34,27 @@ func groupYamlDocsByPathValues(groupbyPath string, inputData []interface{}) (map
 /*
 Writes the grouped data to the output directory
 */
-func outputGroupedDataToDir(groupedData map[string]interface{}, outputDir string) {
+func outputGroupedDataToDir(logger Logger, groupedData map[string]interface{}, outputDir string) {
 	for groupby_key, shardVal := range groupedData {
 		groupedDocs := shardVal.([]interface{})
 		if len(groupedDocs) > 0 {
-			outputSingleShardToFile(groupedDocs, groupby_key, outputDir)
+			outputSingleShardToFile(logger, groupedDocs, groupby_key, outputDir)
 		}
 
 	}
 	// TODO: return details of the files created
 }
 
-func outputUngroupedDataToDir(ungroupedDocs []interface{}, outputDir string) {
+func outputUngroupedDataToDir(logger Logger, ungroupedDocs []interface{}, outputDir string) {
 	if len(ungroupedDocs) > 0 {
-		outputSingleShardToFile(ungroupedDocs, "__ungrouped__", outputDir)
+		outputSingleShardToFile(logger, ungroupedDocs, "__ungrouped__", outputDir)
 	}
 	// TODO: return details of the created file
 }
 
-func outputSingleShardToFile(docs []interface{}, shardName string, outputDir string) {
+func outputSingleShardToFile(logger Logger, docs []interface{}, shardName string, outputDir string) {
 
-	multiYamlDoc, err := multiDocYAMLToString(docs)
+	multiYamlDoc, err := multiDocYAMLToString(logger, docs)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -72,6 +72,6 @@ func outputSingleShardToFile(docs []interface{}, shardName string, outputDir str
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Wrote %d YAML docs to file %q\n", len(docs), outPath)
+	logger.Info(fmt.Sprintf("Wrote %d YAML docs to file %q\n", len(docs), outPath))
 
 }
