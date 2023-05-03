@@ -1,0 +1,14 @@
+---
+group: a
+name: a1
+---
+group: b
+name: b1
+---
+group: a
+name: a2
+---
+group: b
+name: b2
+---
+name: outlier1
